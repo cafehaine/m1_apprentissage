@@ -2,12 +2,14 @@ import pandas as pd
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, mean_squared_error, mean_absolute_error, r2_score
-from sklearn.neural_network import MLPClassifier
+from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.preprocessing import LabelEncoder
 
 import matplotlib.pyplot as plt
 
-def read_data(path: str, y_label: str, remove_columns: list[str]=[], encode_columns: list[str]=[]):
+import seaborn as sns
+
+def read_data(path: str, y_label: str, remove_columns: list[str]=[], encode_columns: list[str]=[], show_correlation=False):
     """Return X and y."""
     data = pd.read_csv(path)
 
@@ -17,14 +19,17 @@ def read_data(path: str, y_label: str, remove_columns: list[str]=[], encode_colu
     for colname in encode_columns:
         encode_column(data, colname)
 
-    f = plt.figure(figsize=(19, 15))
-    plt.matshow(data.corr(), fignum=f.number)
-    plt.xticks(range(data.select_dtypes(['number']).shape[1]), data.select_dtypes(['number']).columns, fontsize=14, rotation=45)
-    plt.yticks(range(data.select_dtypes(['number']).shape[1]), data.select_dtypes(['number']).columns, fontsize=14)
-    cb = plt.colorbar()
-    cb.ax.tick_params(labelsize=14)
-    plt.title('Correlation Matrix', fontsize=16);
-    plt.show()
+    if show_correlation:
+        f = plt.figure(figsize=(19, 15))
+        plt.matshow(data.corr(), fignum=f.number)
+        plt.xticks(range(data.select_dtypes(['number']).shape[1]), data.select_dtypes(['number']).columns, fontsize=14, rotation=45)
+        plt.yticks(range(data.select_dtypes(['number']).shape[1]), data.select_dtypes(['number']).columns, fontsize=14)
+        cb = plt.colorbar()
+        cb.ax.tick_params(labelsize=14)
+        plt.title('Correlation Matrix', fontsize=16);
+        plt.show()
+
+    #analyze_good_employees(data)
 
     X = data
     y = data.pop(y_label)
@@ -40,19 +45,19 @@ def encode_column(data, colname):
 
 def build_classifier(X, y, **kwargs) -> MLPClassifier:
     classifier = MLPClassifier(**kwargs)
+    print("training...")
     classifier.fit(X, y)
+    print("done.")
 
     return classifier
 
-#def build_regressor(X, y, **kwargs) -> tree.DecisionTreeRegressor:
-#    regressor = tree.DecisionTreeRegressor(**kwargs)
-#    regressor.fit(X, y)
-#
-#    return regressor
+def build_regressor(X, y, **kwargs) -> MLPRegressor:
+    regressor = MLPRegressor(**kwargs)
+    print("training...")
+    regressor.fit(X, y)
+    print("done.")
 
-def graph_tree(model, path: str, features: list[str]):
-    tree.export_graphviz(model, out_file=path, feature_names=features)
-
+    return regressor
 
 def evaluate_classifier(classifier, X_train, y_train, X_test, y_test):
     print("Accuracy train:", classifier.score(X_train, y_train))
@@ -69,18 +74,47 @@ def evaluate_regressor(regressor, X_train, y_train, X_test, y_test):
     print("Mean absolute error:", mean_absolute_error(y_test, y_pred))
     print("r2 score:", r2_score(y_test, y_pred))
 
+def analyze_good_employees(data):
+    averages = data.mean()
+    average_last_evaluation = averages['last_evaluation']
+    average_project = averages['number_project']
+    average_montly_hours = averages['average_montly_hours']
+    average_time_spend = averages['time_spend_company']
+
+    good_employees = data[data['last_evaluation'] > average_last_evaluation]
+    good_employees = good_employees[good_employees['number_project'] > average_project]
+    good_employees = good_employees[good_employees['average_montly_hours'] > average_montly_hours]
+    good_employees = good_employees[good_employees['time_spend_company'] > average_time_spend]
+
+    sns.set()
+    plt.figure(figsize=(15, 8))
+    plt.hist(data['left'])
+    print(good_employees.shape)
+    sns.heatmap(good_employees.corr(), vmax=0.5, cmap="PiYG")
+    plt.title('Correlation matrix')
+    plt.show()
+
 def human_resources():
     X, y = read_data('human_resources.csv', 'left', encode_columns=["sales", "salary"])
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+    #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
     #classifier = build_classifier(X_train, y_train)
-    classifier = build_classifier(X_train, y_train)
+    #classifier = build_classifier(X_train, y_train)
 
     # graph_tree(classifier, 'tree.dot', ['Meteo','Amis','Vent','Jour'])
 
-    evaluate_classifier(classifier, X_train, y_train, X_test, y_test)
+    #evaluate_classifier(classifier, X_train, y_train, X_test, y_test)
+
+def bikes_hour():
+    #X, y = read_data('./hour.csv', 'cnt', remove_columns=['instant', 'dteday', 'registered'], show_correlation=True)
+    X, y = read_data('./hour.csv', 'cnt', remove_columns=['instant', 'dteday'], show_correlation=True)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+    regressor = build_regressor(X_train, y_train)
+
+    evaluate_regressor(regressor, X_train, y_train, X_test, y_test)
 
 def main():
-    human_resources()
+    #human_resources()
+    bikes_hour()
 
 if __name__ == '__main__':
     main()
