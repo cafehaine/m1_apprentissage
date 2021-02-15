@@ -56,7 +56,7 @@ def recherche_ucb(nb_iter: int, machines: Sequence[Manchot]) -> float:
             for manchot in machines:
                 ucb = (
                     scores[manchot] / tirages[manchot]
-                    + K * math.log(len(machines)) / tirages[manchot]
+                    + K * math.log(i) / tirages[manchot]
                 )
                 if ucb > best_ucb:
                     best_ucb = ucb
