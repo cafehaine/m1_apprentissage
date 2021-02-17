@@ -9,8 +9,8 @@ class Coordinates(NamedTuple):
 
 class Island:
     def __init__(self, width: int, height: int, n_rhum: int) -> None:
-        if width * height < n_rhum + 1:
-            raise ValueError("Island too small to contain the rhum and the treasure.")
+        if width * height < n_rhum + 2:
+            raise ValueError("Island too small to contain the rhum, the treasure and an empty cell.")
 
         self._width = width
         self._height = height
@@ -66,8 +66,25 @@ class Island:
         """Return the value of a cell."""
         return self._board[coords.y][coords.x]
 
-    def random_coords(self) -> Coordinates:
+    def random_coords(self, empty: bool=True) -> Coordinates:
         """Return some random coordinates."""
-        return Coordinates(
-            random.randint(0, self._width - 1), random.randint(0, self._height - 1)
-        )
+        while True:
+            coords = Coordinates(
+                random.randint(0, self._width - 1), random.randint(0, self._height - 1)
+            )
+            if self.get_value(coords) == 0:
+                return coords
+
+    def print(self, pirate_coords: Optional[Coordinates]=None) -> None:
+        """Print in the terminal the island."""
+        for y, row in enumerate(self._board):
+            for x, cell in enumerate(row):
+                if pirate_coords and pirate_coords.x == x and pirate_coords.y == y:
+                    print("💀", end="")
+                elif cell == 2:
+                    print("🍶", end="")
+                elif cell == 10:
+                    print("👑", end="")
+                else:
+                    print("🟨", end="")
+            print()

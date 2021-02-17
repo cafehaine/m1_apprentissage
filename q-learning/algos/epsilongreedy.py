@@ -7,13 +7,17 @@ EPSILON = 0.9
 
 
 def epsilongreedy(
-    island: Island, coords: Optional[Coordinates], remaining_turns: int = 20
+        island: Island, *, coords: Optional[Coordinates]=None, remaining_turns: int = 20, print_island: bool=False
 ) -> int:
-    if remaining_turns <= 0:
-        return 0
-
     if coords is None:
         coords = island.random_coords()
+
+    if print_island:
+        print("-" * island._width * 2)
+        island.print(coords)
+
+    if remaining_turns <= 0:
+        return 0
 
     action_kind = random.random()
 
@@ -38,4 +42,4 @@ def epsilongreedy(
         new_coords = rand_coords
 
     output = island.take_contents(new_coords)
-    return output + epsilongreedy(island, new_coords, remaining_turns - 1)
+    return output + epsilongreedy(island, coords=new_coords, remaining_turns=remaining_turns - 1, print_island=print_island)
