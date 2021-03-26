@@ -10,6 +10,7 @@ from sklearn.metrics import (
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 
 
@@ -26,10 +27,17 @@ def get_knn_classifier(n, X, y):
     return classifier
 
 
-def get_tree_classifier(X, y, criterion='entropy', **kwargs) -> DecisionTreeClassifier:
+def get_tree_classifier(X, y, criterion="entropy", **kwargs) -> DecisionTreeClassifier:
     classifier = DecisionTreeClassifier(criterion=criterion, **kwargs)
     classifier.fit(X, y)
     return classifier
+
+
+def get_mlp_classifier(X, y, **kwargs) -> MLPClassifier:
+    classifier = MLPClassifier(**kwargs)
+    classifier.fit(X, y)
+    return classifier
+
 
 def evaluate_classifier(classifier, X_train, y_train, X_test, y_test):
     train_score = classifier.score(X_train, y_train)
@@ -53,18 +61,23 @@ def analyzeData(data):
     # les différentes statistiques ?
 
     # le nombre d'exemples de chaque classe
-    classes = data['Z'].unique()
+    classes = data["Z"].unique()
     classes.sort()
     print("Population classes:")
     for class_ in classes:
-        pop = len(data[data['Z'] == class_])
+        pop = len(data[data["Z"] == class_])
         print(f"    {class_}: {pop}")
 
     # la matrice de corrélation
     sns.set()
     plt.figure(figsize=(15, 8))
-    sns.heatmap(data.corr(), vmin=-0.75, vmax=0.75, cmap=sns.diverging_palette(145, 300, s=60, as_cmap=True))
-    plt.title('Matrice de corrélation')
+    sns.heatmap(
+        data.corr(),
+        vmin=-0.75,
+        vmax=0.75,
+        cmap=sns.diverging_palette(145, 300, s=60, as_cmap=True),
+    )
+    plt.title("Matrice de corrélation")
     plt.show()
 
 
@@ -80,13 +93,24 @@ def learning_knn(X, y, *, n):
 
 
 def learning_tree(X, y):
-    print(f"Learning with decision tree")
+    print("Learning with decision tree")
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.6, random_state=42
     )
 
     # Les paramètres par défaut donnent un assez bon résultat
     classifier = get_tree_classifier(X_train, y_train)
+    evaluate_classifier(classifier, X_train, y_train, X_test, y_test)
+
+
+def learning_mlp(X, y, **kwargs):
+    print(f"Learning with neural network {kwargs}")
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.6, random_state=42
+    )
+
+    # Les paramètres par défaut donnent un assez bon résultat
+    classifier = get_mlp_classifier(X_train, y_train, **kwargs)
     evaluate_classifier(classifier, X_train, y_train, X_test, y_test)
 
 
@@ -97,7 +121,15 @@ def main():
             "A",  # Constant
             "B",  # Constant
             "C",  # Seems to be a unique ID
-            "H", "J", "R", "T", "U", "V", "W", "X", "Y", # Corrélation ~= 0
+            "H",
+            "J",
+            "R",
+            "T",
+            "U",
+            "V",
+            "W",
+            "X",
+            "Y",  # Corrélation ~= 0
         ),
     )
     analyzeData(X)
@@ -106,6 +138,7 @@ def main():
     # 3 est un bon compromis, la population minimum étant de 4
     learning_knn(X, y, n=3)
     learning_tree(X, y)
+    learning_mlp(X, y)
 
 
 if __name__ == "__main__":
