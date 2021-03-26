@@ -9,6 +9,7 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import StandardScaler
 
 
@@ -24,6 +25,11 @@ def get_knn_classifier(n, X, y):
     classifier.fit(X, y)
     return classifier
 
+
+def get_tree_classifier(X, y, criterion='entropy', **kwargs) -> DecisionTreeClassifier:
+    classifier = DecisionTreeClassifier(criterion=criterion, **kwargs)
+    classifier.fit(X, y)
+    return classifier
 
 def evaluate_classifier(classifier, X_train, y_train, X_test, y_test):
     train_score = classifier.score(X_train, y_train)
@@ -73,6 +79,17 @@ def learning_knn(X, y, *, n):
     evaluate_classifier(classifier, X_train, y_train, X_test, y_test)
 
 
+def learning_tree(X, y):
+    print(f"Learning with decision tree")
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.6, random_state=42
+    )
+
+    # Les paramètres par défaut donnent un assez bon résultat
+    classifier = get_tree_classifier(X_train, y_train)
+    evaluate_classifier(classifier, X_train, y_train, X_test, y_test)
+
+
 def main():
     X = load_dataframe(
         "exam.csv",
@@ -86,7 +103,9 @@ def main():
     analyzeData(X)
     y = X.pop("Z")
 
+    # 3 est un bon compromis, la population minimum étant de 4
     learning_knn(X, y, n=3)
+    learning_tree(X, y)
 
 
 if __name__ == "__main__":
