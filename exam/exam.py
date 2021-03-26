@@ -59,6 +59,7 @@ def analyzeData(data):
     exemples, caracteristiques = data.shape
     print(f"Caractéristiques : {caracteristiques}, Exemples : {exemples}")
     # les différentes statistiques ?
+    print(data.describe())
 
     # le nombre d'exemples de chaque classe
     classes = data["Z"].unique()
@@ -81,9 +82,24 @@ def analyzeData(data):
     plt.show()
 
 
-def learning_knn(X, y, *, n):
-    print(f"Learning with KNN ({n})")
-    X = normalize(X, y)
+def learning_knn(X, y, *, n, double_q_weight=False):
+    if double_q_weight:
+        print(f"Learning with KNN ({n}), doubled Q weight")
+    else:
+        print(f"Learning with KNN ({n})")
+    if double_q_weight:
+        for label in X:
+            column = X[label]
+            if label == 'Q':
+                column = [value * 2 for value in column]
+            else:
+                minimum = min(column)
+                maximum = max(column)
+                factor = maximum - minimum
+                column = [(value - minimum) * factor for value in column]
+            X[label] = column
+    else:
+        X = normalize(X, y)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.6, random_state=42
     )
@@ -92,14 +108,14 @@ def learning_knn(X, y, *, n):
     evaluate_classifier(classifier, X_train, y_train, X_test, y_test)
 
 
-def learning_tree(X, y):
-    print("Learning with decision tree")
+def learning_tree(X, y, **kwargs):
+    print(f"Learning with decision tree {kwargs}")
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.6, random_state=42
     )
 
     # Les paramètres par défaut donnent un assez bon résultat
-    classifier = get_tree_classifier(X_train, y_train)
+    classifier = get_tree_classifier(X_train, y_train, **kwargs)
     evaluate_classifier(classifier, X_train, y_train, X_test, y_test)
 
 
@@ -137,7 +153,10 @@ def main():
 
     # 3 est un bon compromis, la population minimum étant de 4
     learning_knn(X, y, n=3)
+    learning_knn(X, y, n=3, double_q_weight=True)
+
     learning_tree(X, y)
+
     learning_mlp(X, y)
 
 
